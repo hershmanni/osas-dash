@@ -1,3 +1,5 @@
+library(shinydashboard)
+
 header <- dashboardHeader(title = "OSAS Group Assessment Dashboard v0.1")
 
 sidebar <- dashboardSidebar(width = 500,
