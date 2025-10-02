@@ -144,7 +144,7 @@ server <- function(input, output, session) {
             mutate(participants_raw = if_else(is.na(participants_raw), 0, participants_raw)) %>%
             group_by(subject, grade_level, district, organization, focus_type, focus_value, participants_raw) %>%
             summarise(source_file = paste(unique(source_file), collapse = ", "),
-                      source_url = paste(unique(source_file), collapse = ", "),
+                      source_url = paste(unique(source_url), collapse = ", "),
                       .groups = 'drop') %>%
             rename(total_students = participants_raw)
 
