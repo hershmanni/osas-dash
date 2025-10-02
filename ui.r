@@ -84,14 +84,28 @@ body <- dashboardBody(
                             ),
                 plotlyOutput('osas.size.hist', height = 220),
                 div(style = 'min-width: 720px; max-width: 100%;',
-                    sliderInput('osas.size.range',
-                                label = 'Organization Size (students tested)',
-                                min = floor(osas_size_min),
-                                max = ceiling(osas_size_max),
-                                value = c(floor(osas_size_min), ceiling(osas_size_max)),
-                                step = 1,
-                                sep = ',',
-                                width = '100%')
+                    fluidRow(
+                        column(
+                            width = 6,
+                            numericInput(
+                                inputId = 'osas.size.min',
+                                label = 'Minimum Students Tested',
+                                value = osas_size_min,
+                                min = 0,
+                                step = 1
+                            )
+                        ),
+                        column(
+                            width = 6,
+                            numericInput(
+                                inputId = 'osas.size.max',
+                                label = 'Maximum Students Tested',
+                                value = osas_size_max,
+                                min = 0,
+                                step = 1
+                            )
+                        )
+                    )
                 ),
                 p('Highlights the five highest and five lowest organizations for the selected focus value, by grade, in the chosen year.'),
                 DTOutput('osas.top.bottom.table'),

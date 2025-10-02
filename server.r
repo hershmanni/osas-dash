@@ -159,18 +159,20 @@ server <- function(input, output, session) {
     })
 
     osas_size_bounds <- reactive({
-        range_val <- input$osas.size.range
-        if (is.null(range_val) || length(range_val) != 2) {
-            return(list(min_raw = NA_real_, max_raw = NA_real_, min = -Inf, max = Inf, active = FALSE))
-        }
+        min_val <- suppressWarnings(as.numeric(input$osas.size.min))
+        max_val <- suppressWarnings(as.numeric(input$osas.size.max))
 
-        min_val <- suppressWarnings(as.numeric(range_val[1]))
-        max_val <- suppressWarnings(as.numeric(range_val[2]))
+        if (is.null(min_val) || length(min_val) == 0) {
+            min_val <- NA_real_
+        }
+        if (is.null(max_val) || length(max_val) == 0) {
+            max_val <- NA_real_
+        }
 
         if (!is.na(min_val) && !is.na(max_val) && min_val > max_val) {
             tmp <- min_val
             min_val <- max_val
-            max_val = tmp
+            max_val <- tmp
         }
 
         list(
