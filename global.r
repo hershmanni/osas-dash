@@ -13,7 +13,6 @@ library(plotly)
 # load data
 dt.osas.date <- '20251002'
 
-cat(dt.osas.date)
 dt.osas.fname <- paste0('ode_pagr_all_files-',dt.osas.date,'.rds')
 dt.osas <- readRDS(dt.osas.fname) %>%
     mutate(year_spring = year_fall + 1)

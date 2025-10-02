@@ -3,7 +3,7 @@ library(tidyr)
 
 header <- dashboardHeader(title = "OSAS Group Assessment Dashboard v0.1")
 
-sidebar <- dashboardSidebar(width = 500,
+sidebar <- dashboardSidebar(width = 80,
     tags$style(HTML(".dropdown-menu>li>a{ color: #444 !important; }")),
     tags$style(HTML('div #sankey { height: 800px !important; }')),
     tags$style(HTML('div #sankey-summary table td:nth-child(1) { text-align: right; padding-right: 10px }')),
@@ -86,7 +86,7 @@ body <- dashboardBody(
                 div(style = 'min-width: 720px; max-width: 100%;',
                     fluidRow(
                         column(
-                            width = 2,
+                            width = 1,
                             numericInput(
                                 inputId = 'osas.size.min',
                                 label = 'Minimum Students Tested',
@@ -96,7 +96,7 @@ body <- dashboardBody(
                             )
                         ),
                         column(
-                            width = 2,
+                            width = 1,
                             numericInput(
                                 inputId = 'osas.size.max',
                                 label = 'Maximum Students Tested',
