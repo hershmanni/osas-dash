@@ -22,7 +22,8 @@ dt.osas %>% str()
 
 
 osas_size_summary <- dt.osas %>%
-    filter(!grepl("All Districts",organization), as.character(district) != as.character(organization)) %>%
+    # filter(!grepl("All Districts",organization), as.character(district) != as.character(organization)) %>%
+    filter(!grepl("All Districts",organization)) %>%
     summarise(
         min_participants = suppressWarnings(min(number_of_participants, na.rm = TRUE)),
         max_participants = suppressWarnings(max(number_of_participants, na.rm = TRUE))

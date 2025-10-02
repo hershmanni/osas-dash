@@ -199,7 +199,7 @@ server <- function(input, output, session) {
         }
         
         range_span <- diff(range(aggregated$total_students, na.rm = TRUE))
-        binwidth <- ifelse(range_span <= 30, 1, 10)
+        binwidth <- ifelse(range_span <= 30, 1, 5)
         if (!is.finite(binwidth) || binwidth <= 0) {
             binwidth <- 1
         }
