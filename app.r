@@ -12,7 +12,6 @@ library(shinyjqui)
 library(DT)
 library(ggplot2)
 library(plotly)
-library(openxlsx)
 
 
 # load data
