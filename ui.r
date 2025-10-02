@@ -86,7 +86,7 @@ body <- dashboardBody(
                 div(style = 'min-width: 720px; max-width: 100%;',
                     fluidRow(
                         column(
-                            width = 6,
+                            width = 2,
                             numericInput(
                                 inputId = 'osas.size.min',
                                 label = 'Minimum Students Tested',
@@ -96,7 +96,7 @@ body <- dashboardBody(
                             )
                         ),
                         column(
-                            width = 6,
+                            width = 2,
                             numericInput(
                                 inputId = 'osas.size.max',
                                 label = 'Maximum Students Tested',
