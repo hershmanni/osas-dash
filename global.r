@@ -18,6 +18,8 @@ dt.osas.fname <- paste0('ode_pagr_all_files-',dt.osas.date,'.rds')
 dt.osas <- readRDS(dt.osas.fname) %>%
     mutate(year_spring = year_fall + 1)
 
+dt.osas %>% str()
+
 
 osas_size_summary <- dt.osas %>%
     filter(!grepl("All Districts",organization), as.character(district) != as.character(organization)) %>%

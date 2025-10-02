@@ -142,7 +142,9 @@ server <- function(input, output, session) {
             ) %>%
             filter(!is.na(focus_value)) %>%
             mutate(participants_raw = if_else(is.na(participants_raw), 0, participants_raw)) %>%
-            distinct(subject, grade_level, district, organization, focus_type, focus_value, participants_raw) %>%
+            group_by(subject, grade_level, district, organization, focus_type, focus_value, participants_raw) %>%
+            summarise(source_file = paste(unique(source_file), collapse = ", "),
+                      .groups = 'drop') %>%
             rename(total_students = participants_raw)
 
             # group_by(subject, grade_level, district, organization) %>%
@@ -264,7 +266,8 @@ server <- function(input, output, session) {
                 Rank = numeric(),
                 `Students` = numeric(),
                 `Focus` = character(),
-                `Focus Value` = numeric()
+                `Focus Value` = numeric(),
+                `Source File` = character()
             )
             return(datatable(empty_tbl))
         }
@@ -303,7 +306,7 @@ server <- function(input, output, session) {
                 focus_sort = if_else(direction == "Highest", -focus_value, focus_value)
             ) %>%
             arrange(`Year (Spring)`, subject, Grade, `Student Group`, district, direction_order, rank, focus_sort) %>%
-            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value) %>%
+            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value, source_file) %>%
             rename(
                 Subject = subject,
                 District = district,
@@ -311,7 +314,8 @@ server <- function(input, output, session) {
                 Direction = direction,
                 Rank = rank,
                 `Focus` = focus_type,
-                `Focus Value` = focus_value
+                `Focus Value` = focus_value,
+                `Source File` = source_file
             )
 
         datatable(summary_tbl,
