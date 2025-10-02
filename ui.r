@@ -83,7 +83,7 @@ body <- dashboardBody(
                                 )
                             ),
                 plotlyOutput('osas.size.hist', height = 220),
-                div(style = 'width: 720px; max-width: 100%;',
+                div(style = 'min-width: 720px; max-width: 100%;',
                     sliderInput('osas.size.range',
                                 label = 'Organization Size (students tested)',
                                 min = floor(osas_size_min),
