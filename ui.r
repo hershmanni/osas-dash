@@ -45,26 +45,6 @@ body <- dashboardBody(
                                 actionsBox = TRUE
                                 )
                             ),
-                pickerInput(inputId = "osas.focus_year",
-                            label = "Focus Spring Year",
-                            choices = dt.osas %>% distinct(year_spring) %>% arrange(desc(year_spring)) %>% pull,
-                            selected = dt.osas %>% summarise(max(year_spring, na.rm = TRUE)) %>% pull,
-                            multiple = FALSE,
-                            options = pickerOptions(
-                                actionsBox = FALSE
-                                )
-                            ),
-                plotlyOutput('osas.size.hist', height = 220),
-                div(style = 'width: 720px; max-width: 100%;',
-                    sliderInput('osas.size.range',
-                                label = 'Organization Size (students tested)',
-                                min = floor(osas_size_min),
-                                max = ceiling(osas_size_max),
-                                value = c(floor(osas_size_min), ceiling(osas_size_max)),
-                                step = 1,
-                                sep = ',',
-                                width = '100%')
-                ),
                 pickerInput(inputId = "osas.organization.focus",
                             label = "Select Organization(s)",
                             choices = levels(dt.osas$organization),
@@ -93,6 +73,26 @@ body <- dashboardBody(
                 jqui_resizable(plotlyOutput('osas.participation_rate')),
                 hr(),
                 h3('Top & Bottom Performers'),
+                pickerInput(inputId = "osas.focus_year",
+                            label = "Focus Spring Year",
+                            choices = dt.osas %>% distinct(year_spring) %>% arrange(desc(year_spring)) %>% pull,
+                            selected = dt.osas %>% summarise(max(year_spring, na.rm = TRUE)) %>% pull,
+                            multiple = FALSE,
+                            options = pickerOptions(
+                                actionsBox = FALSE
+                                )
+                            ),
+                plotlyOutput('osas.size.hist', height = 220),
+                div(style = 'width: 720px; max-width: 100%;',
+                    sliderInput('osas.size.range',
+                                label = 'Organization Size (students tested)',
+                                min = floor(osas_size_min),
+                                max = ceiling(osas_size_max),
+                                value = c(floor(osas_size_min), ceiling(osas_size_max)),
+                                step = 1,
+                                sep = ',',
+                                width = '100%')
+                ),
                 p('Highlights the five highest and five lowest organizations for the selected focus value, by grade, in the chosen year.'),
                 DTOutput('osas.top.bottom.table'),
                 #renderDataTable('osas.top.bottom.table'),
