@@ -95,6 +95,7 @@ body <- dashboardBody(
                 h3('Top & Bottom Performers'),
                 p('Highlights the five highest and five lowest organizations for the selected focus value, by grade, in the chosen year.'),
                 DTOutput('osas.top.bottom.table'),
+                #renderDataTable('osas.top.bottom.table'),
                 hr()
     ))
 )

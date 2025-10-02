@@ -268,8 +268,7 @@ server <- function(input, output, session) {
                 `Students` = numeric(),
                 `Focus` = character(),
                 `Focus Value` = numeric(),
-                `Source File` = character(),
-                `Source URL` = character()
+                `Source File` = character()
             )
             return(datatable(empty_tbl))
         }
@@ -308,7 +307,8 @@ server <- function(input, output, session) {
                 focus_sort = if_else(direction == "Highest", -focus_value, focus_value)
             ) %>%
             arrange(`Year (Spring)`, subject, Grade, `Student Group`, district, direction_order, rank, focus_sort) %>%
-            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value, source_file, source_url) %>%
+            mutate(file_link = paste0("<a href='", source_url, "' target='_blank'>", source_file, "</a>")) %>%
+            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value, file_link) %>%
             rename(
                 Subject = subject,
                 District = district,
@@ -317,14 +317,16 @@ server <- function(input, output, session) {
                 Rank = rank,
                 `Focus` = focus_type,
                 `Focus Value` = focus_value,
-                `Source File` = source_file,
-                `Source URL` = source_url
+                `Source File` = file_link
             )
 
         datatable(summary_tbl,
                   options = list(
                       pageLength = 10,
                       order = list(list(0, 'asc'), list(1, 'asc'), list(2, 'asc'), list(3, 'asc'), list(7, 'asc'), list(11, 'desc'))
-                  ))
+                      
+                  ),
+                  escape = FALSE
+                  )
     }, server = TRUE)
 }
