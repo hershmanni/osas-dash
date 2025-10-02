@@ -13,9 +13,32 @@ sidebar <- dashboardSidebar(width = 80,
     )
 )
 
+# styling inputs
+
 body <- dashboardBody(
     tabItems(
         tabItem(tabName = "osas",
+        tags$style(HTML("
+                .osas-size-input {
+                    position: relative;
+                    display: inline-block;
+                    width: 100%;
+                }
+                .osas-size-input input.form-control {
+                    padding-left: 28px;
+                }
+                .osas-size-input::before {
+                    position: absolute;
+                    top: 50%;
+                    left: 15px;
+                    transform: translateY(-30%);
+                    color: #ccc;
+                    pointer-events: none;
+                    font-size: 12pt;
+                }
+                .osas-size-input-min::before { content: '≥'; }
+                .osas-size-input-max::before { content: '≤'; }
+                ")),
                 HTML(paste0('<p>Data Source: <b>',dt.osas.fname,'</b></p>',
                 '<p>Raw files provided by ODE at <a href="https://www.oregon.gov/ode/educator-resources/assessment/Pages/Assessment-Group-Reports.aspx">Group Assessments page</a>.</p>',
                 '<p>Script/Site built by: Nick Hershman. Please let me know if you notice any errors or have suggestions for improvement!</p>',
@@ -86,23 +109,29 @@ body <- dashboardBody(
                 div(style = 'min-width: 720px; max-width: 100%;',
                     fluidRow(
                         column(
-                            width = 1,
-                            numericInput(
-                                inputId = 'osas.size.min',
-                                label = 'Minimum Students Tested',
-                                value = osas_size_min,
-                                min = 0,
-                                step = 1
+                            width = 2,
+                            div(
+                                class = "osas-size-input osas-size-input-min",
+                                numericInput(
+                                    inputId = 'osas.size.min',
+                                    label = 'Minimum Students Tested',
+                                    value = osas_size_min,
+                                    min = 0,
+                                    step = 1
+                                )
                             )
                         ),
                         column(
-                            width = 1,
-                            numericInput(
-                                inputId = 'osas.size.max',
-                                label = 'Maximum Students Tested',
-                                value = osas_size_max,
-                                min = 0,
-                                step = 1
+                            width = 2,
+                            div(
+                                class = "osas-size-input osas-size-input-max",
+                                numericInput(
+                                    inputId = 'osas.size.max',
+                                    label = 'Maximum Students Tested',
+                                    value = osas_size_max,
+                                    min = 0,
+                                    step = 1
+                                )
                             )
                         )
                     )
