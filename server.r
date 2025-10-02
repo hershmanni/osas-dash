@@ -144,6 +144,7 @@ server <- function(input, output, session) {
             mutate(participants_raw = if_else(is.na(participants_raw), 0, participants_raw)) %>%
             group_by(subject, grade_level, district, organization, focus_type, focus_value, participants_raw) %>%
             summarise(source_file = paste(unique(source_file), collapse = ", "),
+                      source_url = paste(unique(source_file), collapse = ", "),
                       .groups = 'drop') %>%
             rename(total_students = participants_raw)
 
@@ -267,7 +268,8 @@ server <- function(input, output, session) {
                 `Students` = numeric(),
                 `Focus` = character(),
                 `Focus Value` = numeric(),
-                `Source File` = character()
+                `Source File` = character(),
+                `Source URL` = character()
             )
             return(datatable(empty_tbl))
         }
@@ -306,7 +308,7 @@ server <- function(input, output, session) {
                 focus_sort = if_else(direction == "Highest", -focus_value, focus_value)
             ) %>%
             arrange(`Year (Spring)`, subject, Grade, `Student Group`, district, direction_order, rank, focus_sort) %>%
-            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value, source_file) %>%
+            select(`Year (Spring)`, subject, Grade, `Student Group`, district, organization, direction, rank, `Students`, focus_type, focus_value, source_file, source_url) %>%
             rename(
                 Subject = subject,
                 District = district,
@@ -315,7 +317,8 @@ server <- function(input, output, session) {
                 Rank = rank,
                 `Focus` = focus_type,
                 `Focus Value` = focus_value,
-                `Source File` = source_file
+                `Source File` = source_file,
+                `Source URL` = source_url
             )
 
         datatable(summary_tbl,
