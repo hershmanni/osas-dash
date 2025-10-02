@@ -211,7 +211,7 @@ server <- function(input, output, session) {
         g <- ggplot(aggregated, aes(x = total_students, fill = in_range)) +
             geom_histogram(binwidth = binwidth, color = "#ffffff") +
             scale_fill_manual(values = c(`TRUE` = "#3182bd", `FALSE` = "#d3d3d3"), guide = FALSE) +
-            xlim(0, min(1000, max(aggregated$total_students))) + 
+            xlim(0, min(3500, max(aggregated$total_students))) + 
             labs(x = "Students tested", y = "Organizations") +
             theme_minimal(base_size = 12)
 
