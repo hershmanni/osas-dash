@@ -1,3 +1,15 @@
+library(dplyr)
+library(janitor)
+options(dplyr.summarise.inform=FALSE)
+library(networkD3)
+library(shiny)
+library(shinydashboard)
+library(shinyWidgets)
+library(shinyjqui)
+library(DT)
+library(ggplot2)
+library(plotly)
+
 # load data
 dt.osas.date <- '20251002'
 
