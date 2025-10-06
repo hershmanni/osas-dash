@@ -40,7 +40,7 @@ body <- dashboardBody(
                 .osas-size-input-max::before { content: '≤'; }
                 ")),
                 tags$style(HTML("#osas_student_group_summary table.dataTable tbody td { padding: 2px 6px; }")),
-                HTML(paste0('<p>Data Source: <b>',dt.osas.fname,'</b></p>',
+                HTML(paste0('<p>Data Source: <b>',dt.osas.fname,'</b> (happy to provide by request)</p>',
                 '<p>Raw files provided by ODE at <a href="https://www.oregon.gov/ode/educator-resources/assessment/Pages/Assessment-Group-Reports.aspx">Group Assessments page</a>.</p>',
                 '<p>Oregonlive has a <a href="https://schools.oregonlive.com/">test score viewer</a> and <a href="https://www.oregonlive.com/education/2024/10/look-up-test-scores-for-any-oregon-school-see-performance-trends-at-a-glance.html">overview</a>.</p>',
                 '<p>Script/Site built by: Nick Hershman. Please let me know if you notice any errors or have suggestions for improvement!</p>',
