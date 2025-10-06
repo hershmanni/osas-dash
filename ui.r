@@ -58,25 +58,18 @@ body <- dashboardBody(
                 DTOutput('osas.student.group.summary'),
                 hr(),
                 radioGroupButtons(inputId = 'osas.value.focus',
-                                  label = 'Select focus value',
-                                  choices = c("percent_proficient","percent_level_1", "percent_level_2", "percent_level_3","percent_level_4"),
-                                  selected = "percent_proficient"
-                                  ),
+                                    label = 'Select focus value',
+                                    choices = c("percent_proficient","percent_level_1", "percent_level_2", "percent_level_3","percent_level_4"),
+                                    selected = "percent_proficient"
+                                    ),
                 materialSwitch(inputId = 'osas.outcomes.show_labels',
-                               label = 'Show labels on yearly outcomes',
-                               value = FALSE,
-                               status = 'primary'
-                               ),
-                pickerInput(inputId = "osas.grade.focus",
-                            label = "Select Grade Level(s)",
-                            choices = dt.osas %>% distinct(grade_level) %>% pull,
-                            selected = dt.osas %>% distinct(grade_level) %>% pull,
-                            multiple = TRUE,
-                            options = pickerOptions(
-                                actionsBox = TRUE
-                                )
+                            label = 'Show labels on yearly outcomes',
+                            value = FALSE,
+                            status = 'primary'
                             ),
-                pickerInput(inputId = "osas.organization.focus",
+                fluidRow(
+                    column(width = 6,
+                    pickerInput(inputId = "osas.organization.focus",
                             label = "Select Organization(s)",
                             choices = levels(dt.osas$organization),
                             selected = c("Oregon (All Districts)","Beaverton SD 48J"),
@@ -86,7 +79,20 @@ body <- dashboardBody(
                                 liveSearch = TRUE,
                                 size = 10
                                 )
+                            )
+                    ),
+                    column(width = 6,
+                           pickerInput(inputId = "osas.grade.focus",
+                            label = "Select Grade Level(s)",
+                            choices = dt.osas %>% distinct(grade_level) %>% pull,
+                            selected = dt.osas %>% distinct(grade_level) %>% pull,
+                            multiple = TRUE,
+                            options = pickerOptions(
+                                actionsBox = TRUE
+                                )
                             ),
+                    )
+                ),
                 jqui_resizable(plotlyOutput('osas.outcomes')),
                 hr(),
                 pickerInput(inputId = "osas.cohorts.select",
