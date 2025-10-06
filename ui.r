@@ -29,9 +29,9 @@ body <- dashboardBody(
                 }
                 .osas-size-input::before {
                     position: absolute;
-                    top: 50%;
+                    top: 40%;
                     left: 15px;
-                    transform: translateY(-30%);
+                    //transform: translateY(-50%);
                     color: #ccc;
                     pointer-events: none;
                     font-size: 12pt;
@@ -39,6 +39,7 @@ body <- dashboardBody(
                 .osas-size-input-min::before { content: '≥'; }
                 .osas-size-input-max::before { content: '≤'; }
                 ")),
+                tags$style(HTML("#osas_student_group_summary table.dataTable tbody td { padding: 2px 6px; }")),
                 HTML(paste0('<p>Data Source: <b>',dt.osas.fname,'</b></p>',
                 '<p>Raw files provided by ODE at <a href="https://www.oregon.gov/ode/educator-resources/assessment/Pages/Assessment-Group-Reports.aspx">Group Assessments page</a>.</p>',
                 '<p>Script/Site built by: Nick Hershman. Please let me know if you notice any errors or have suggestions for improvement!</p>',
@@ -53,12 +54,19 @@ body <- dashboardBody(
                                   ),
                 hr(),
                 uiOutput('osas.student.group.chooser'),
+                p(paste0('Number of schools and districts reporting OSAS data for your selected student group.')),
+                DTOutput('osas.student.group.summary'),
                 hr(),
                 radioGroupButtons(inputId = 'osas.value.focus',
                                   label = 'Select focus value',
                                   choices = c("percent_proficient","percent_level_1", "percent_level_2", "percent_level_3","percent_level_4"),
                                   selected = "percent_proficient"
                                   ),
+                materialSwitch(inputId = 'osas.outcomes.show_labels',
+                               label = 'Show labels on yearly outcomes',
+                               value = FALSE,
+                               status = 'primary'
+                               ),
                 pickerInput(inputId = "osas.grade.focus",
                             label = "Select Grade Level(s)",
                             choices = dt.osas %>% distinct(grade_level) %>% pull,
@@ -90,12 +98,18 @@ body <- dashboardBody(
                                 actionsBox = TRUE,
                                 )
                             ),
+                materialSwitch(inputId = 'osas.cohort.outcomes.show_labels',
+                               label = 'Show labels on cohort trajectories',
+                               value = FALSE,
+                               status = 'primary'
+                               ),
                 hr(),
                 jqui_resizable(plotlyOutput('osas.cohort.outcomes')),
                 hr(),
                 jqui_resizable(plotlyOutput('osas.participation_rate')),
                 hr(),
-                h3('Top & Bottom Performers'),
+                h3('Highest Performing Organizations'),
+                p('Find the highest performing organizations in a given <b>focus year</b> for this student population. Select a year and use the minimum and maximum inputs if you want to only include schools or districts with certain numbers of students.'),
                 pickerInput(inputId = "osas.focus_year",
                             label = "Focus Spring Year",
                             choices = dt.osas %>% distinct(year_spring) %>% arrange(desc(year_spring)) %>% pull,
@@ -136,7 +150,7 @@ body <- dashboardBody(
                         )
                     )
                 ),
-                p('Highlights the five highest and five lowest organizations for the selected focus value, by grade, in the chosen year.'),
+                p('Highlights the five highest organizations for the selected focus value, by grade, in the chosen year.'),
                 DTOutput('osas.top.bottom.table'),
                 #renderDataTable('osas.top.bottom.table'),
                 hr()

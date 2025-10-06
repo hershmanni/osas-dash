@@ -11,25 +11,67 @@ server <- function(input, output, session) {
                           )
     })
 
+    output$osas.student.group.summary <- renderDT({
+        student_groups <- dt.osas %>% distinct(student_group) %>% arrange(student_group) %>% pull(student_group)
+
+        selected_group <- input$student_groups.focus
+        if (is.null(selected_group) || !selected_group %in% student_groups) {
+            selected_group <- student_groups[[1]]
+        }
+
+        summary_tbl <- dt.osas %>%
+            filter(student_group == selected_group) %>%
+            count(year_spring, student_group, subject, name = "records") %>%
+            mutate(year_spring = as.character(year_spring)) %>%
+            tidyr::pivot_wider(names_from = year_spring,
+                               values_from = records,
+                               values_fill = 0) %>%
+            arrange(desc(as.numeric(subject))) %>%
+            rename(`Subject` = subject,
+                   `Student Group` = student_group)
+
+        datatable(summary_tbl,
+                  rownames = FALSE,
+                  class = 'compact stripe hover',
+                  options = list(
+                      paging = FALSE,
+                      searching = FALSE,
+                      info = FALSE,
+                      ordering = FALSE,
+                      dom = 't'
+                  ))
+    })
+
     output$osas.outcomes <- renderPlotly({
         my_subjects <- input$osas.subjects.focus
         my_group <- input$student_groups.focus
         my_organizations <- input$osas.organization.focus
         my_grades <- input$osas.grade.focus
+        value_col <- sym(input$osas.value.focus)
 
-        dt.osas %>% filter(subject %in% my_subjects,
-                           organization %in% my_organizations,
-                           student_group == my_group,
-                           grade_level %in% my_grades) %>%
+        plot_data <- dt.osas %>%
+            filter(subject %in% my_subjects,
+                   organization %in% my_organizations,
+                   student_group == my_group,
+                   grade_level %in% my_grades) %>%
             mutate(subject.fix = case_when(subject == "English Language Arts" ~ "ELA",
                                            subject == "Mathematics" ~ "Math",
-                                           subject == "Science" ~ "Science")) %>%            
-            ggplot(aes(x = year_spring, y = !!sym(input$osas.value.focus), color = organization, group = grade_level, label = number_of_participants, label2 = participation_rate, label3 = source_file)) +
+                                           subject == "Science" ~ "Science"))
+
+        if (nrow(plot_data) == 0) {
+            return(plotly::plotly_empty())
+        }
+
+        active_orgs <- unique(as.character(plot_data$organization))
+
+        g <- ggplot(plot_data,
+                    aes(x = year_spring, y = !!value_col, color = organization, group = grade_level,
+                        label = number_of_participants, label2 = participation_rate, label3 = source_file)) +
             theme_bw() +
             theme(legend.position = "top") +
             geom_line() +
             geom_point() +
-            geom_text(aes(label = round(!!sym(input$osas.value.focus), 1)), nudge_y = 5, size = 2.5) + # added apr 16th
+            scale_color_manual(values = osas_colors_for(active_orgs)) +
             # geom_label_repel(aes(label = round(!!sym(input$osas.value.focus), 1)),
             #                  box.padding = 0.3,
             #                  point.padding = 0.2,
@@ -41,7 +83,16 @@ server <- function(input, output, session) {
                                            multi_line = TRUE)) +
             ylim(0, 100) +
             scale_x_continuous(breaks = c(2014, 2018, 2022)) +
-            labs(title = paste0("OSAS - ",input$osas.value.focus," (",my_group,")")) -> g
+            labs(title = paste0("OSAS - ",input$osas.value.focus," (",my_group,")"))
+
+        if (isTRUE(input$osas.outcomes.show_labels)) {
+            g <- g +
+                geom_text(aes(label = round(!!value_col, 1)),
+                          nudge_y = 5,
+                          size = 2.5,
+                          show.legend = FALSE,
+                          check_overlap = TRUE)
+        }
 
         ggplotly(g) %>%
             plotly::layout(legend = list(x = 0.9,
@@ -57,24 +108,44 @@ server <- function(input, output, session) {
         my_group <- input$student_groups.focus
         my_organizations <- input$osas.organization.focus
         my_cohorts <- as.numeric(input$osas.cohorts.select)
+        value_col <- sym(input$osas.value.focus)
 
-        dt.osas %>% filter(subject %in% my_subjects,
-                           !is.na(class_of),
-                           organization %in% my_organizations,
-                           student_group == my_group,
-                           class_of %in% my_cohorts) %>%
-            ggplot(aes(x = grade_num, y = !!sym(input$osas.value.focus), color = organization, group = class_of,
-            label = number_of_participants, label2 = participation_rate, label3 = source_file)) +
+        plot_data <- dt.osas %>%
+            filter(subject %in% my_subjects,
+                   !is.na(class_of),
+                   organization %in% my_organizations,
+                   student_group == my_group,
+                   class_of %in% my_cohorts)
+
+        if (nrow(plot_data) == 0) {
+            return(plotly::plotly_empty())
+        }
+
+        active_orgs <- unique(as.character(plot_data$organization))
+
+        g <- ggplot(plot_data,
+                    aes(x = grade_num, y = !!value_col, color = organization, group = class_of,
+                        label = number_of_participants, label2 = participation_rate, label3 = source_file)) +
             theme_bw() +
             geom_line() +
             geom_point() +
+            scale_color_manual(values = osas_colors_for(active_orgs)) +
             facet_grid(class_of ~ subject,
                        labeller = labeller(label_wrap_gen(8),
                                            multi_line = TRUE)) +
             ylim(0, 100) +
             scale_x_continuous(breaks = c(3:8,11)) +
             labs(title = paste0("OSAS - ",input$osas.value.focus," (",my_group,")"),
-                 x = "Grade") -> g
+                 x = "Grade")
+
+        if (isTRUE(input$osas.cohort.outcomes.show_labels)) {
+            g <- g +
+                geom_text(aes(label = round(!!value_col, 1)),
+                          nudge_y = 4,
+                          size = 2.3,
+                          show.legend = FALSE,
+                          check_overlap = TRUE)
+        }
 
         ggplotly(g) %>% plotly::layout(legend = list(x = 0.9,
                                                      xanchor = "right",
@@ -210,7 +281,7 @@ server <- function(input, output, session) {
 
         g <- ggplot(aggregated, aes(x = total_students, fill = in_range)) +
             geom_histogram(binwidth = binwidth, color = "#ffffff") +
-            scale_fill_manual(values = c(`TRUE` = "#3182bd", `FALSE` = "#d3d3d3"), guide = FALSE) +
+            scale_fill_manual(values = c(`TRUE` = osas_palette_base[1], `FALSE` = "#d3d3d3"), guide = FALSE) +
             xlim(0, min(3500, max(aggregated$total_students))) + 
             labs(x = "Students tested", y = "Organizations") +
             theme_minimal(base_size = 12)
@@ -223,23 +294,33 @@ server <- function(input, output, session) {
         my_group <- input$student_groups.focus
         my_organizations <- input$osas.organization.focus        
         
-        dt.osas %>% filter(subject %in% my_subjects,
-                           organization %in% my_organizations,
-                           student_group == my_group) %>%
+        plot_data <- dt.osas %>%
+            filter(subject %in% my_subjects,
+                   organization %in% my_organizations,
+                   student_group == my_group) %>%
             mutate(subject.fix = case_when(subject == "English Language Arts" ~ "ELA",
                                            subject == "Mathematics" ~ "Math",
-                                           subject == "Science" ~ "Science")) %>%
-            ggplot(aes(x = year_spring, y = participation_rate, color = organization, group = grade_level)) +
+                                           subject == "Science" ~ "Science"))
+
+        if (nrow(plot_data) == 0) {
+            return(plotly::plotly_empty())
+        }
+
+        active_orgs <- unique(as.character(plot_data$organization))
+
+        g <- ggplot(plot_data,
+                    aes(x = year_spring, y = participation_rate, color = organization, group = grade_level)) +
             theme_bw() +
             theme(legend.position = "top") +            
             geom_line() +
             geom_point() +
+            scale_color_manual(values = osas_colors_for(active_orgs)) +
             facet_grid(subject.fix ~ grade_level,
                        labeller = labeller(subject = label_wrap_gen(8),
                                            multi_line = TRUE)) +
             ylim(0, 100) +            
             scale_x_continuous(breaks = c(2014, 2018, 2022)) +
-            labs(title = paste0("OSAS Participation Rate (",my_group,")")) -> g
+            labs(title = paste0("OSAS Participation Rate (",my_group,")"))
 
         ggplotly(g) %>% plotly::layout(legend = list(x = 0.9,
                                                      xanchor = "right",
@@ -252,10 +333,13 @@ server <- function(input, output, session) {
         aggregated <- osas_aggregated()
 
         bounds <- osas_size_bounds()
+        my_organizations <- input$osas.organization.focus
+        if (is.null(my_organizations)) {
+            my_organizations <- character(0)
+        }
 
         filtered <- aggregated %>%
-            filter(total_students >= bounds$min,
-                   total_students <= bounds$max)
+            filter((total_students >= bounds$min & total_students <= bounds$max) | organization %in% my_organizations)
 
         if (nrow(filtered) == 0) {
             empty_tbl <- tibble::tibble(
@@ -298,15 +382,38 @@ server <- function(input, output, session) {
             slice_head(n = 5) %>%
             mutate(direction = "Lowest")
 
-        summary_tbl <- bind_rows(top_tbl, bottom_tbl) %>%
+        selected_tbl <- filtered %>%
+            group_by(subject, grade_level) %>%
+            arrange(desc(focus_value), organization) %>%
+            mutate(rank = row_number()) %>%
+            filter(organization %in% my_organizations) %>%
+            mutate(direction = "Selected") %>%
+            ungroup()
+
+        selected_only <- selected_tbl %>%
+            anti_join(top_tbl %>% select(subject, grade_level, district, organization),
+                      by = c("subject", "grade_level", "district", "organization")) %>%
+            anti_join(bottom_tbl %>% select(subject, grade_level, district, organization),
+                      by = c("subject", "grade_level", "district", "organization"))
+
+        #summary_tbl <- bind_rows(top_tbl, bottom_tbl, selected_only) %>%
+        summary_tbl <- bind_rows(top_tbl, selected_only) %>%
             ungroup() %>%
             mutate(
                 Grade = as.character(grade_level),
                 `Year (Spring)` = focus_year,
                 `Student Group` = my_group,
                 `Students` = total_students,
-                direction_order = if_else(direction == "Highest", 0, 1),
-                focus_sort = if_else(direction == "Highest", -focus_value, focus_value)
+                direction_order = case_when(
+                    direction == "Highest" ~ 0,
+                    direction == "Selected" ~ 1,
+                    TRUE ~ 2
+                ),
+                focus_sort = case_when(
+                    direction == "Highest" ~ -focus_value,
+                    direction == "Selected" ~ -focus_value,
+                    TRUE ~ focus_value
+                )
             ) %>%
             arrange(`Year (Spring)`, subject, Grade, `Student Group`, district, direction_order, rank, focus_sort) %>%
             mutate(file_link = paste0("<a href='", source_url, "' target='_blank'>", source_file, "</a>")) %>%
@@ -322,13 +429,25 @@ server <- function(input, output, session) {
                 `Source File` = file_link
             )
 
-        datatable(summary_tbl,
-                  options = list(
-                      pageLength = 10,
-                      order = list(list(0, 'asc'), list(1, 'asc'), list(2, 'asc'), list(3, 'asc'), list(7, 'asc'), list(11, 'desc'))
-                      
-                  ),
-                  escape = FALSE
-                  )
+        highlight_orgs <- unique(my_organizations)
+
+        table_widget <- datatable(summary_tbl,
+                                  options = list(
+                                      pageLength = 5 + length(highlight_orgs),
+                                      order = list(list(0, 'asc'), list(1, 'asc'), list(2, 'asc'), list(3, 'asc'), list(11, 'desc'))
+                                      
+                                  ),
+                                  escape = FALSE
+                                  )
+
+        if (length(highlight_orgs) > 0) {
+            table_widget <- table_widget %>%
+                formatStyle('Organization',
+                            target = 'row',
+                            backgroundColor = styleEqual(highlight_orgs,
+                                                          rep('#fff9db', length(highlight_orgs))))
+        }
+
+        table_widget
     }, server = TRUE)
 }
