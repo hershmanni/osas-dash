@@ -116,7 +116,7 @@ body <- dashboardBody(
                 jqui_resizable(plotlyOutput('osas.participation_rate')),
                 hr(),
                 h3('Highest Performing Organizations'),
-                p('Find the highest performing organizations in a given <b>focus year</b> for this student population. Select a year and use the minimum and maximum inputs if you want to only include schools or districts with certain numbers of students.'),
+                HTML('<p>Find the highest performing organizations in a given <b>focus year</b> for this student population. Select a year and use the minimum and maximum inputs if you want to only include schools or districts with certain numbers of students.</p>'),
                 pickerInput(inputId = "osas.focus_year",
                             label = "Focus Spring Year",
                             choices = dt.osas %>% distinct(year_spring) %>% arrange(desc(year_spring)) %>% pull,
