@@ -74,7 +74,7 @@ body <- dashboardBody(
                     pickerInput(inputId = "osas.organization.focus",
                             label = "Select Organization(s)",
                             choices = levels(dt.osas$organization),
-                            selected = c("Oregon (All Districts)","Beaverton SD 48J"),
+                            selected = c("Oregon (All Districts)",
                             multiple = TRUE,
                             options = pickerOptions(
                                 actionsBox = TRUE,
