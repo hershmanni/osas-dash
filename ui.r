@@ -5,6 +5,7 @@ sidebar <- dashboardSidebar(
   sidebarMenu(
     id = "main_tab",
     menuItem("Trends", tabName = "trends", icon = icon("chart-line")),
+    menuItem("Population", tabName = "population", icon = icon("users")),
     menuItem("Rankings", tabName = "rankings", icon = icon("ranking-star")),
     menuItem("Cohorts", tabName = "cohorts", icon = icon("people-group")),
     menuItem("Coverage & Data", tabName = "coverage", icon = icon("table-cells"))
@@ -12,12 +13,32 @@ sidebar <- dashboardSidebar(
   div(
     class = "sidebar-filter-panel",
     h4("Explore"),
-    pickerInput(
-      "student_group",
-      "Student population",
-      choices = dashboard_student_groups,
-      selected = dashboard_default_group,
-      options = pickerOptions(liveSearch = TRUE, size = 10)
+    conditionalPanel(
+      condition = "input.main_tab != 'population'",
+      pickerInput(
+        "student_group",
+        "Student population",
+        choices = dashboard_student_groups,
+        selected = dashboard_default_group,
+        options = pickerOptions(liveSearch = TRUE, size = 10)
+      )
+    ),
+    conditionalPanel(
+      condition = "input.main_tab == 'population'",
+      virtualSelectInput(
+        "population_groups",
+        "Student populations",
+        choices = dashboard_student_groups,
+        selected = dashboard_default_population_groups,
+        multiple = TRUE,
+        search = TRUE,
+        showSelectedOptionsFirst = TRUE,
+        optionsCount = 10,
+        noOfDisplayValues = 2,
+        maxValues = 8,
+        disableSelectAll = TRUE,
+        updateOn = "change"
+      )
     ),
     pickerInput(
       "subject",
@@ -243,6 +264,42 @@ body <- dashboardBody(
         solidHeader = TRUE,
         plotlyOutput("grade_heatmap", height = 520),
         uiOutput("heatmap_source_details")
+      )
+    ),
+    tabItem(
+      tabName = "population",
+      h2("Students tested over time"),
+      p(
+        class = "dashboard-intro",
+        "Compare the published All Grades tested count for up to eight student populations over time. Each organization panel uses its own vertical scale."
+      ),
+      div(
+        class = "data-note",
+        p(
+          "Student populations can overlap and should not be added together. Population definitions and reporting availability may change across years. Where duplicate source files disagree, the chart uses the lower reported count and the tooltip shows the published range."
+        ),
+        p(
+          class = "population-definition-note",
+          tags$b("Important for spring 2022: "),
+          "ODE reported this group as “Econo. Disadvantaged,” and pandemic-era universal meal rules caused nearly all tested students to be included. The dashboard harmonizes that historical label as “Students Experiencing Poverty,” but the 2022 value should be treated as a reporting-definition break—not as a demographic change."
+        )
+      ),
+      uiOutput("population_selection_summary"),
+      box(
+        width = 12,
+        title = "Students tested by population",
+        status = "primary",
+        solidHeader = TRUE,
+        collapsible = TRUE,
+        uiOutput("population_plot_ui"),
+        uiOutput("population_source_details")
+      ),
+      box(
+        width = 12,
+        title = "Published student counts",
+        status = "info",
+        solidHeader = TRUE,
+        DTOutput("population_table")
       )
     ),
     tabItem(

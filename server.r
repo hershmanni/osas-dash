@@ -329,6 +329,7 @@ server <- function(input, output, session) {
   }
 
   trend_source_selection <- make_source_selection("trend")
+  population_source_selection <- make_source_selection("population")
   ranking_source_selection <- make_source_selection("ranking")
   heatmap_source_selection <- make_source_selection("rank_heatmap")
   cohort_source_selection <- make_source_selection("cohort")
@@ -342,6 +343,15 @@ server <- function(input, output, session) {
       metric = validate_metric(input$trend_metric),
       grades = input$trend_grades,
       labels = isTRUE(input$trend_labels)
+    )
+  }) |>
+    debounce(250)
+  population_state <- reactive({
+    req(input$subject)
+    list(
+      subject = input$subject,
+      organizations = input$organizations,
+      student_groups = input$population_groups
     )
   }) |>
     debounce(250)
@@ -365,7 +375,7 @@ server <- function(input, output, session) {
       keep <- selected[seq_len(8)]
       updateVirtualSelect("organizations", selected = keep, session = session)
       showNotification(
-        "Trend and cohort comparisons are limited to eight total organizations, including benchmarks.",
+        "Dashboard comparisons are limited to eight total organizations, including benchmarks.",
         type = "warning",
         duration = 6
       )
@@ -417,6 +427,11 @@ server <- function(input, output, session) {
 
   observeEvent(input$reset_filters, {
     updatePickerInput(session, "student_group", selected = dashboard_default_group)
+    updateVirtualSelect(
+      "population_groups",
+      selected = dashboard_default_population_groups,
+      session = session
+    )
     updatePickerInput(session, "subject", selected = dashboard_default_subject)
     updateVirtualSelect("organizations", selected = "state:oregon", session = session)
     updatePickerInput(session, "trend_metric", selected = "percent_proficient")
@@ -689,6 +704,194 @@ server <- function(input, output, session) {
   output$trend_source_details <- renderUI({
     source_details_for_observation(trend_source_selection(), trend_data(), "trend")
   })
+
+  output$population_selection_summary <- renderUI({
+    state <- population_state()
+    available <- population_data() |>
+      filter(!is.na(observation_id), !is.na(value))
+    div(
+      class = "selection-summary",
+      paste(
+        "Published All Grades counts available for",
+        length(unique(available$student_group)), "of", length(state$student_groups),
+        "selected student population(s) in", state$subject, "across",
+        length(unique(available$organization_key)), "organization(s)."
+      )
+    )
+  })
+
+  population_data <- reactive({
+    state <- population_state()
+    validate(need(length(state$student_groups) > 0, "Select at least one student population."))
+    validate(need(length(state$organizations) > 0, "Select at least one organization."))
+
+    data <- osas_records |>
+      filter(
+        as.character(subject) == state$subject,
+        as.character(organization_key) %in% state$organizations,
+        as.character(student_group) %in% state$student_groups,
+        as.character(grade_level) == "All Grades"
+      ) |>
+      mutate(
+        organization_key = as.character(organization_key),
+        subject = as.character(subject),
+        grade_level = as.character(grade_level),
+        student_group = as.character(student_group),
+        value = participants_min,
+        participants_display = format_value_range(participants_min, participants_max, 0),
+        participation_display = format_value_range(participation_min, participation_max, 1, "%"),
+        data_flags = source_conflict_label(
+          participants_min, participants_max, participation_min, participation_max
+        )
+      )
+
+    if (nrow(data) == 0) return(data)
+
+    data <- data |>
+      left_join(source_names_for(data$observation_id), by = "observation_id") |>
+      decorate_records() |>
+      select(
+        observation_id, spring_year, organization_key, subject, grade_level,
+        student_group, value, participants_min, participants_max,
+        participants_display, participation_display, source_count, source_preview,
+        historical_name, district_name, data_flags
+      )
+
+    data |>
+      add_spring_year_gaps(year_range = seq(min(dashboard_spring_years), max(dashboard_spring_years))) |>
+      left_join(
+        osas_organizations |>
+          select(organization_key, current_name, choice_label, organization_type),
+        by = "organization_key"
+      ) |>
+      add_unique_chart_labels() |>
+      mutate(
+        organization_type = as.character(organization_type),
+        hover_text = if_else(
+          is.na(value),
+          paste0(
+            "<b>", choice_label, "</b><br>", student_group,
+            "<br>Spring ", spring_year, "<br>No published All Grades count"
+          ),
+          paste0(
+            "<b>", choice_label, "</b><br>",
+            student_group, " · ", state$subject, "<br>",
+            "Spring ", spring_year, "<br>",
+            "Students tested: ", participants_display, "<br>",
+            "Participation: ", participation_display, "<br>",
+            if_else(is.na(district_name), "", paste0("District: ", district_name, "<br>")),
+            if_else(
+              is.na(historical_name) | historical_name == current_name,
+              "",
+              paste0("Reported name: ", historical_name, "<br>")
+            ),
+            "Source conflict: ", data_flags, "<br>",
+            format_source_hover(source_preview, source_count, click_hint = TRUE)
+          )
+        )
+      )
+  })
+
+  clear_invalid_source_selection(population_source_selection, population_data)
+
+  output$population_plot_ui <- renderUI({
+    organization_count <- population_data() |>
+      filter(!is.na(observation_id), !is.na(value)) |>
+      distinct(organization_key) |>
+      nrow() |>
+      max(1)
+    plotlyOutput(
+      "population_plot",
+      height = paste0(max(500, ceiling(organization_count / 2) * 300), "px")
+    )
+  })
+
+  output$population_plot <- renderPlotly({
+    state <- population_state()
+    data <- population_data()
+    validate(need(nrow(data) > 0 && any(!is.na(data$value)), "No published All Grades counts match the current selections."))
+
+    group_levels <- state$student_groups[state$student_groups %in% unique(data$student_group)]
+    group_colors <- population_group_colors[group_levels]
+    group_shapes <- population_group_shapes[group_levels]
+    organization_count <- length(unique(data$organization_key))
+    facet_columns <- if (organization_count <= 2) organization_count else 2
+
+    graph <- ggplot(
+      data,
+      aes(
+        x = spring_year,
+        y = value,
+        color = student_group,
+        shape = student_group,
+        group = interaction(organization_key, student_group),
+        key = observation_id,
+        text = hover_text
+      )
+    ) +
+      annotate("rect", xmin = 2019.5, xmax = 2021.5, ymin = -Inf, ymax = Inf, fill = "#777777", alpha = 0.12) +
+      annotate(
+        "text", x = 2020.5, y = Inf, label = "No source records\n2020–2021",
+        vjust = 1.25, size = 2.6, color = "#555555"
+      ) +
+      geom_line(linewidth = 0.8, na.rm = TRUE) +
+      geom_point(size = 2, na.rm = TRUE) +
+      facet_wrap(vars(chart_label), ncol = max(1, facet_columns), scales = "free_y") +
+      scale_color_manual(values = group_colors, drop = FALSE) +
+      scale_shape_manual(values = group_shapes, drop = FALSE) +
+      scale_x_continuous(breaks = seq(min(dashboard_spring_years), max(dashboard_spring_years))) +
+      scale_y_continuous(labels = scales::comma) +
+      labs(
+        x = "Spring testing year",
+        y = "Students tested",
+        color = "Student population",
+        shape = "Student population",
+        subtitle = paste(state$subject, "· Published All Grades records")
+      ) +
+      theme_minimal(base_size = 12) +
+      theme(
+        legend.position = "top",
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(face = "bold"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_text(margin = margin(t = 10))
+      ) +
+      dashboard_panel_theme()
+
+    ggplotly(graph, tooltip = "text", dynamicTicks = FALSE, source = "population") |>
+      event_register("plotly_click") |>
+      layout(legend = list(orientation = "h", x = 0, y = 1.08), margin = list(t = 70)) |>
+      config(displaylogo = FALSE, responsive = TRUE)
+  })
+
+  output$population_source_details <- renderUI({
+    source_details_for_observation(
+      population_source_selection(),
+      population_data(),
+      "population"
+    )
+  })
+
+  output$population_table <- renderDT({
+    display <- population_data() |>
+      filter(!is.na(observation_id), !is.na(value)) |>
+      transmute(
+        Organization = chart_label,
+        `Student Population` = student_group,
+        `Spring Year` = spring_year,
+        `Students Tested` = participants_display
+      ) |>
+      arrange(Organization, `Student Population`, `Spring Year`) |>
+      pivot_wider(names_from = `Spring Year`, values_from = `Students Tested`)
+
+    validate(need(nrow(display) > 0, "No published All Grades counts match the current selections."))
+    datatable(
+      display,
+      rownames = FALSE,
+      class = "compact stripe hover",
+      options = list(pageLength = 15, scrollX = TRUE, autoWidth = TRUE)
+    )
+  }, server = FALSE)
 
   participation_data <- reactive({
     state <- trend_state()

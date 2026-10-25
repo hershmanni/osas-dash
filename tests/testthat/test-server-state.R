@@ -1,6 +1,12 @@
 source(file.path(project_root, "global.r"), local = FALSE, chdir = TRUE)
 source(file.path(project_root, "server.r"), local = FALSE, chdir = TRUE)
 
+test_that("population view warns about the spring 2022 definition break", {
+  ui_source <- paste(readLines(file.path(project_root, "ui.r"), warn = FALSE), collapse = "\n")
+  expect_match(ui_source, "Important for spring 2022", fixed = TRUE)
+  expect_match(ui_source, "reporting-definition break", fixed = TRUE)
+})
+
 test_that("organization selector uses clean flat labels while retaining every type", {
   expect_false(is.list(organization_choices))
   expect_equal(
@@ -50,6 +56,76 @@ test_that("default trend plot is compact and vertically resizable", {
     expect_match(rendered, "Drag to resize plot height", fixed = TRUE)
     expect_match(rendered, "aria-valuenow", fixed = TRUE)
     expect_match(rendered, "ArrowUp", fixed = TRUE)
+  })
+})
+
+test_that("population view compares multiple published All Grades counts", {
+  comparison_groups <- intersect(
+    c("Total Population (All Students)", "White"),
+    dashboard_student_groups
+  )
+  expect_length(comparison_groups, 2)
+
+  shiny::testServer(server, {
+    session$setInputs(
+      subject = dashboard_default_subject,
+      organizations = "state:oregon",
+      population_groups = comparison_groups
+    )
+    session$elapse(300)
+    session$flushReact()
+
+    observed <- population_data() |>
+      filter(!is.na(observation_id), !is.na(value))
+    expect_setequal(unique(observed$student_group), comparison_groups)
+    expect_equal(unique(observed$organization_key), "state:oregon")
+    expect_true(all(observed$grade_level == "All Grades"))
+    expect_equal(observed$value, observed$participants_min)
+
+    plot <- jsonlite::fromJSON(as.character(output$population_plot), simplifyVector = FALSE)
+    plot_keys <- suppressWarnings(as.integer(unlist(lapply(plot$x$data, `[[`, "key"))))
+    clicked_id <- observed$observation_id[[1]]
+    clicked_group <- observed$student_group[[1]]
+    marker_keys <- suppressWarnings(
+      Filter(
+        function(trace) grepl("markers", trace$mode %||% "", fixed = TRUE),
+        plot$x$data
+      ) |>
+        lapply(`[[`, "key") |>
+        unlist() |>
+        as.integer()
+    )
+    expect_equal(plot$x$source, "population")
+    expect_true(clicked_id %in% plot_keys)
+    expect_true(clicked_id %in% marker_keys)
+
+    click_json <- jsonlite::toJSON(list(key = clicked_id), auto_unbox = TRUE)
+    do.call(session$setInputs, stats::setNames(list(click_json), "plotly_click-population"))
+    session$flushReact()
+    expect_match(output$population_source_details$html, "Students tested", fixed = TRUE)
+    expect_match(output$population_source_details$html, "href=", fixed = TRUE)
+
+    session$setInputs(clear_source_population = 1)
+    session$flushReact()
+    expect_match(
+      output$population_source_details$html,
+      "Click a reported data point",
+      fixed = TRUE
+    )
+
+    do.call(session$setInputs, stats::setNames(list(click_json), "plotly_click-population"))
+    session$flushReact()
+    expect_match(output$population_source_details$html, "href=", fixed = TRUE)
+
+    session$setInputs(population_groups = setdiff(comparison_groups, clicked_group))
+    session$elapse(300)
+    session$flushReact()
+    expect_match(
+      output$population_source_details$html,
+      "Click a reported data point",
+      fixed = TRUE
+    )
+    expect_false(grepl("href=", output$population_source_details$html, fixed = TRUE))
   })
 })
 

@@ -33,6 +33,7 @@ Rscript tests/testthat.R
 ## Interpretation notes
 
 - Spring 2020 and 2021 have no records in the prepared dashboard source. Trend lines break across those years.
+- The Population view compares published `All Grades` students-tested records across multiple selected student populations. Populations may overlap and should not be added together; definitions and availability may change over time.
 - Cohort trajectories connect aggregate grade-level results; they do not follow individual students.
 - Rankings may combine state, district, and school results. These populations overlap, so combined ranks are descriptive. The dashboard also reports within-type ranks.
 - Participant or participation-rate ranges indicate disagreement between otherwise duplicated source files. Agreed proficiency results remain available and retain their source links.

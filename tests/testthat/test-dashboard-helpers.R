@@ -117,15 +117,23 @@ test_that("midrank percentiles are tie-aware", {
 
 test_that("spring gaps prevent a direct 2019 to 2022 connection", {
   data <- tibble::tibble(
-    organization_key = c("school:1", "school:1", "school:2", "school:2"),
+    organization_key = "school:1",
     subject = "Mathematics",
     grade_level = "Grade 5",
+    student_group = c("Group A", "Group A", "Group B", "Group B"),
     spring_year = c(2019, 2022, 2019, 2022),
     value = c(50, 55, 60, 65)
   )
   completed <- add_spring_year_gaps(data, 2019:2022)
   expect_equal(nrow(completed), 8)
   expect_true(all(is.na(completed$value[completed$spring_year %in% 2020:2021])))
+})
+
+test_that("published ranges retain disagreements", {
+  expect_equal(
+    format_value_range(c(10, 10, NA), c(10, 12, 15), digits = 0),
+    c("10", "10–12", "Not available")
+  )
 })
 
 test_that("cohort gaps use derived testing years", {

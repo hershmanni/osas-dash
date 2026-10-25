@@ -73,6 +73,14 @@ dashboard_palette <- c(
   "#0072B2", "#D55E00", "#009E73", "#CC79A7",
   "#E69F00", "#56B4E9", "#F0E442", "#000000"
 )
+population_group_colors <- stats::setNames(
+  grDevices::hcl.colors(length(dashboard_student_groups), palette = "Dark 3"),
+  dashboard_student_groups
+)
+population_group_shapes <- stats::setNames(
+  rep(c(16, 17, 15, 18, 3, 7, 8, 4), length.out = length(dashboard_student_groups)),
+  dashboard_student_groups
+)
 
 organization_type_shapes <- c(State = 18, District = 17, School = 16)
 organization_type_colors <- c(State = "#5A5A5A", District = "#0072B2", School = "#009E73")
@@ -95,6 +103,7 @@ dashboard_default_group <- if ("Total Population (All Students)" %in% dashboard_
 } else {
   dashboard_student_groups[[1]]
 }
+dashboard_default_population_groups <- dashboard_default_group
 
 dashboard_default_grades <- intersect(
   c("Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Grade HS (11)"),

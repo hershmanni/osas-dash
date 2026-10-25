@@ -107,6 +107,19 @@
   padding: 10px 12px;
 }
 
+.data-note p {
+  margin: 0;
+}
+
+.data-note p + p {
+  margin-top: 8px;
+}
+
+.population-definition-note {
+  border-top: 1px solid rgba(139, 97, 0, 0.25);
+  padding-top: 8px;
+}
+
 .ranking-note {
   background: #edf6fb;
   border-left: 4px solid #0072b2;

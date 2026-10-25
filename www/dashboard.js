@@ -3,6 +3,7 @@
 
   var sourcePlots = {
     trend_plot: "trend",
+    population_plot: "population",
     ranking_plot: "ranking",
     grade_heatmap: "rank_heatmap",
     cohort_plot: "cohort"
@@ -10,6 +11,7 @@
 
   var sourceDetailOutputs = {
     trend_source_details: "trend",
+    population_source_details: "population",
     ranking_source_details: "ranking",
     heatmap_source_details: "rank_heatmap",
     cohort_source_details: "cohort"
@@ -17,6 +19,7 @@
 
   var sourceClickInputs = {
     "plotly_click-trend": "trend",
+    "plotly_click-population": "population",
     "plotly_click-ranking": "ranking",
     "plotly_click-rank_heatmap": "rank_heatmap",
     "plotly_click-cohort": "cohort"

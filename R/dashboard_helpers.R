@@ -478,7 +478,7 @@ add_spring_year_gaps <- function(data, year_range = NULL) {
     year_range <- seq(min(data$spring_year, na.rm = TRUE), max(data$spring_year, na.rm = TRUE))
   }
   series_columns <- intersect(
-    c("organization_key", "subject", "grade_level"), names(data)
+    c("organization_key", "subject", "grade_level", "student_group"), names(data)
   )
   tidyr::complete(
     data,
