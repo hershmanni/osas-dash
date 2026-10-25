@@ -1,0 +1,12 @@
+"section","metric","value"
+"rows","raw",1285191
+"rows","canonical",1113291
+"rows","duplicates_removed",171900
+"rows","source_pairs",1285191
+"rows","missing_source_urls",0
+"field_conflicts","participants",3
+"field_conflicts","participation",359
+"organizations","District",193
+"organizations","School",1301
+"organizations","State",1
+"validation","school_year_parent_conflicts",0
