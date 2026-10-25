@@ -12,6 +12,8 @@ suppressPackageStartupMessages({
 
 options(dplyr.summarise.inform = FALSE)
 
+dashboard_version <- "v.2026.10.25"
+
 source(file.path("R", "dashboard_helpers.R"), local = FALSE)
 
 dashboard_files <- sort(Sys.glob(file.path("data", "osas_dashboard-[0-9]*.rds")), decreasing = TRUE)

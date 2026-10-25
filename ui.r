@@ -1,4 +1,7 @@
-header <- dashboardHeader(title = "OSAS Explorer 2026", titleWidth = 320)
+header <- dashboardHeader(
+  title = paste("OSAS Explorer", dashboard_version),
+  titleWidth = 320
+)
 
 sidebar <- dashboardSidebar(
   width = 320,
@@ -390,5 +393,5 @@ ui <- dashboardPage(
   sidebar,
   body,
   skin = "purple",
-  title = "OSAS Explorer"
+  title = paste("OSAS Explorer", dashboard_version)
 )

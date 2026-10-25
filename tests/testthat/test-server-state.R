@@ -1,6 +1,10 @@
 source(file.path(project_root, "global.r"), local = FALSE, chdir = TRUE)
 source(file.path(project_root, "server.r"), local = FALSE, chdir = TRUE)
 
+test_that("dashboard displays the release version", {
+  expect_equal(dashboard_version, "v.2026.10.25")
+})
+
 test_that("population view warns about the spring 2022 definition break", {
   ui_source <- paste(readLines(file.path(project_root, "ui.r"), warn = FALSE), collapse = "\n")
   expect_match(ui_source, "Important for spring 2022", fixed = TRUE)
