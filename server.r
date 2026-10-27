@@ -43,6 +43,68 @@ dashboard_panel_theme <- function() {
   )
 }
 
+hide_non_bottom_facet_x_labels <- function(plot) {
+  axis_layout <- plot$x$layout
+  x_axis_names <- grep("^xaxis[0-9]*$", names(axis_layout), value = TRUE)
+  y_axis_names <- grep("^yaxis[0-9]*$", names(axis_layout), value = TRUE)
+  if (length(x_axis_names) < 2 || length(y_axis_names) < 2) return(plot)
+
+  y_domain_starts <- vapply(
+    y_axis_names,
+    function(axis_name) {
+      domain <- suppressWarnings(as.numeric(unlist(axis_layout[[axis_name]]$domain)))
+      if (length(domain) < 2 || any(!is.finite(domain))) return(NA_real_)
+      min(domain)
+    },
+    numeric(1)
+  )
+  if (!any(is.finite(y_domain_starts))) return(plot)
+  bottom_domain_start <- min(y_domain_starts, na.rm = TRUE)
+
+  for (axis_name in x_axis_names) {
+    anchor <- axis_layout[[axis_name]]$anchor
+    if (is.null(anchor) || !grepl("^y[0-9]*$", anchor)) next
+    y_axis_name <- sub("^y", "yaxis", anchor)
+    y_domain_start <- y_domain_starts[[y_axis_name]]
+    if (is.null(y_domain_start) || !is.finite(y_domain_start)) next
+    if (y_domain_start > bottom_domain_start + 1e-6) {
+      plot$x$layout[[axis_name]]$showticklabels <- FALSE
+    }
+  }
+
+  plot
+}
+
+promote_gap_labels_to_annotations <- function(plot, label = "No source records") {
+  is_gap_label <- vapply(
+    plot$x$data,
+    function(trace) {
+      identical(trace$mode %||% "", "text") &&
+        any(grepl(label, unlist(trace$text %||% ""), fixed = TRUE))
+    },
+    logical(1)
+  )
+  if (!any(is_gap_label)) return(plot)
+
+  gap_annotations <- lapply(plot$x$data[is_gap_label], function(trace) {
+    list(
+      text = label,
+      x = as.numeric(unlist(trace$x)[[1]]),
+      y = as.numeric(unlist(trace$y)[[1]]),
+      xref = trace$xaxis %||% "x",
+      yref = trace$yaxis %||% "y",
+      showarrow = FALSE,
+      textangle = -90,
+      xanchor = "center",
+      yanchor = "middle",
+      font = list(color = "rgba(111,120,128,0.8)", size = 9)
+    )
+  })
+  plot$x$data <- plot$x$data[!is_gap_label]
+  plot$x$layout$annotations <- c(plot$x$layout$annotations %||% list(), gap_annotations)
+  plot
+}
+
 safe_bounds <- function(minimum, maximum) {
   minimum <- suppressWarnings(as.numeric(minimum))
   maximum <- suppressWarnings(as.numeric(maximum))
@@ -650,8 +712,14 @@ server <- function(input, output, session) {
         text = hover_text
       )
     ) +
-      annotate("rect", xmin = 2019.5, xmax = 2021.5, ymin = -Inf, ymax = Inf, fill = "#777777", alpha = 0.12) +
-      annotate("text", x = 2020.5, y = 4, label = "No source records\nspring 2020–2021", size = 2.5, color = "#555555") +
+      annotate(
+        "rect", xmin = 2019.5, xmax = 2021.5, ymin = -Inf, ymax = Inf,
+        fill = "#aeb7bf", alpha = 0.42
+      ) +
+      annotate(
+        "text", x = 2020.5, y = 50, label = "No source records",
+        angle = 90, size = 2.25, color = "#6f7880", alpha = 0.8
+      ) +
       geom_line(linewidth = 0.75, na.rm = TRUE) +
       geom_point(size = 1.8, na.rm = TRUE) +
       # Give every facet its own Plotly axis pair. ggplotly can otherwise
@@ -700,8 +768,13 @@ server <- function(input, output, session) {
 
     ggplotly(graph, tooltip = "text", dynamicTicks = FALSE, source = "trend") |>
       event_register("plotly_click") |>
-      layout(legend = list(orientation = "h", x = 0, y = 1.08), margin = list(t = 70)) |>
-      config(displaylogo = FALSE, responsive = TRUE)
+      layout(
+        legend = list(orientation = "h", x = 0, y = 1.08),
+        margin = list(t = 70, b = 75)
+      ) |>
+      config(displaylogo = FALSE, responsive = TRUE) |>
+      hide_non_bottom_facet_x_labels() |>
+      promote_gap_labels_to_annotations()
   })
 
   output$trend_source_details <- renderUI({
@@ -962,7 +1035,8 @@ server <- function(input, output, session) {
       dashboard_panel_theme()
 
     ggplotly(graph, tooltip = "text") |>
-      config(displaylogo = FALSE, responsive = TRUE)
+      config(displaylogo = FALSE, responsive = TRUE) |>
+      hide_non_bottom_facet_x_labels()
   })
 
   ranking_context <- reactive({
@@ -1407,11 +1481,14 @@ server <- function(input, output, session) {
 
   output$cohort_selection_summary <- renderUI({
     state <- cohort_state()
+    selected_cohort_labels <- unname(
+      dashboard_cohort_label_lookup[as.character(state$cohorts)]
+    )
     div(
       class = "selection-summary",
-      paste(
-        dashboard_metric_labels[[state$metric]], "for", state$student_group, "in",
-        state$subject, "— classes", paste(state$cohorts, collapse = ", "), "."
+      paste0(
+        dashboard_metric_labels[[state$metric]], " for ", state$student_group, " in ",
+        state$subject, " — ", paste(selected_cohort_labels, collapse = ", "), "."
       )
     )
   })
@@ -1515,7 +1592,11 @@ server <- function(input, output, session) {
     ) +
       geom_line(linewidth = 0.75, na.rm = TRUE) +
       geom_point(size = 1.8, na.rm = TRUE) +
-      facet_wrap(vars(class_of), ncol = 2, labeller = label_both) +
+      facet_wrap(
+        vars(class_of),
+        ncol = 2,
+        labeller = labeller(class_of = as_labeller(dashboard_cohort_label_lookup))
+      ) +
       scale_color_manual(values = label_colors) +
       scale_x_continuous(breaks = sort(unique(data$grade_num))) +
       scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = seq(0, 100, 20)) +

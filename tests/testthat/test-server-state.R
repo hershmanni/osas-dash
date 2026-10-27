@@ -5,6 +5,30 @@ test_that("dashboard displays the release version", {
   expect_equal(dashboard_version, "v.2026.10.25")
 })
 
+test_that("cohort choices describe current grades and default to current secondary students", {
+  expect_equal(dashboard_current_graduating_class, max(dashboard_spring_years) + 1L)
+  expect_equal(
+    unname(dashboard_cohort_label_lookup[
+      as.character(dashboard_current_graduating_class + 1L)
+    ]),
+    paste0(dashboard_current_graduating_class + 1L, ": Current 11th")
+  )
+  expect_match(
+    unname(dashboard_cohort_label_lookup[
+      as.character(dashboard_current_graduating_class - 1L)
+    ]),
+    "Graduated$"
+  )
+  expect_equal(
+    dashboard_default_cohorts,
+    intersect(dashboard_current_graduating_class + 0:4, dashboard_cohorts)
+  )
+  expect_equal(
+    unname(dashboard_cohort_choices[dashboard_cohort_labels]),
+    as.character(dashboard_cohorts)
+  )
+})
+
 test_that("population view warns about the spring 2022 definition break", {
   ui_source <- paste(readLines(file.path(project_root, "ui.r"), warn = FALSE), collapse = "\n")
   expect_match(ui_source, "Important for spring 2022", fixed = TRUE)
@@ -92,6 +116,29 @@ test_that("adding All Grades preserves populated multi-row trend facets", {
 
     expect_true(all(paired_axes))
     expect_length(unique(axis_pairs), length(selected_grades))
+    trend_x_axes <- plot$x$layout[grep("^xaxis[0-9]*$", names(plot$x$layout))]
+    trend_x_labels_visible <- vapply(
+      trend_x_axes,
+      function(axis) isTRUE(axis$showticklabels),
+      logical(1)
+    )
+    expect_true(any(trend_x_labels_visible))
+    expect_true(any(!trend_x_labels_visible))
+    expect_gte(plot$x$layout$margin$b, 75)
+
+    gap_labels <- Filter(
+      function(annotation) {
+        any(grepl(
+          "No source records",
+          unlist(annotation$text %||% ""),
+          fixed = TRUE
+        ))
+      },
+      plot$x$layout$annotations
+    )
+    expect_gt(length(gap_labels), 0)
+    expect_true(all(vapply(gap_labels, function(annotation) annotation$textangle == -90, logical(1))))
+    expect_true(all(vapply(gap_labels, function(annotation) annotation$y == 50, logical(1))))
 
     participation_plot <- jsonlite::fromJSON(
       as.character(output$participation_plot),
@@ -114,6 +161,16 @@ test_that("adding All Grades preserves populated multi-row trend facets", {
     )
 
     expect_true(all(participation_axes_are_paired))
+    participation_x_axes <- participation_plot$x$layout[
+      grep("^xaxis[0-9]*$", names(participation_plot$x$layout))
+    ]
+    participation_x_labels_visible <- vapply(
+      participation_x_axes,
+      function(axis) isTRUE(axis$showticklabels),
+      logical(1)
+    )
+    expect_true(any(participation_x_labels_visible))
+    expect_true(any(!participation_x_labels_visible))
   })
 })
 

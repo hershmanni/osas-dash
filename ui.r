@@ -142,7 +142,7 @@ sidebar <- dashboardSidebar(
       virtualSelectInput(
         "cohort_classes",
         "Graduating classes",
-        choices = dashboard_cohorts,
+        choices = dashboard_cohort_choices,
         selected = dashboard_default_cohorts,
         multiple = TRUE,
         search = TRUE,
@@ -151,6 +151,10 @@ sidebar <- dashboardSidebar(
         noOfDisplayValues = 3,
         disableSelectAll = FALSE,
         updateOn = "change"
+      ),
+      p(
+        class = "help-block cohort-grade-help",
+        paste0("Current-grade labels reflect the ", dashboard_current_school_year, " school year.")
       ),
       pickerInput(
         "cohort_metric",

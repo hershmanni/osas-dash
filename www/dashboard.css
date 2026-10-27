@@ -154,8 +154,9 @@
   font-weight: 650;
   height: 24px;
   justify-content: center;
-  left: calc(50% - 58px);
+  left: auto;
   letter-spacing: 0.01em;
+  right: 12px;
   width: 116px;
 }
 

@@ -2130,19 +2130,19 @@
       "checksum": "27ff8f1cf1e9755977d61084d83a69d9"
     },
     "global.r": {
-      "checksum": "cc74a57a89dbf816e450edcc3a891511"
+      "checksum": "b271b50e01c59fe88374abaaace3b8ab"
     },
     "R/dashboard_helpers.R": {
       "checksum": "afc2db68f0bdb67b3904d4878d03be5c"
     },
     "server.r": {
-      "checksum": "7cbf580b5004680abea9e5897150f219"
+      "checksum": "a9633df286f47f912dd6d2db49f7f57e"
     },
     "ui.r": {
-      "checksum": "3779e9396348f0102bad600b2e17b7d2"
+      "checksum": "ecab9fb072f52348d212396d1aec3b99"
     },
     "www/dashboard.css": {
-      "checksum": "d9524023f60ef21e24ce7edf29c05df4"
+      "checksum": "a27beb4f3777f6c707ae2e6d5ab7fe84"
     },
     "www/dashboard.js": {
       "checksum": "6f124e71cdbdc0b189378fa3cf20efe2"

@@ -89,7 +89,43 @@ organization_type_colors <- c(State = "#5A5A5A", District = "#0072B2", School = 
 
 dashboard_participants_min <- 10
 dashboard_participants_max <- ceiling(max(osas_records$participants_max, na.rm = TRUE))
-dashboard_default_cohorts <- intersect(2022:2026, dashboard_cohorts)
+dashboard_current_graduating_class <- max(dashboard_spring_years) + 1L
+dashboard_current_school_year <- paste0(
+  dashboard_current_graduating_class - 1L,
+  "–",
+  sprintf("%02d", dashboard_current_graduating_class %% 100L)
+)
+dashboard_grade_ordinals <- c(
+  "1st", "2nd", "3rd", "4th", "5th", "6th",
+  "7th", "8th", "9th", "10th", "11th", "12th"
+)
+dashboard_cohort_current_grades <- 12L - (
+  dashboard_cohorts - dashboard_current_graduating_class
+)
+dashboard_cohort_labels <- ifelse(
+  dashboard_cohort_current_grades %in% seq_along(dashboard_grade_ordinals),
+  paste0(
+    dashboard_cohorts, ": Current ",
+    dashboard_grade_ordinals[pmax(1L, pmin(12L, dashboard_cohort_current_grades))]
+  ),
+  ifelse(
+    dashboard_cohorts < dashboard_current_graduating_class,
+    paste0(dashboard_cohorts, ": Graduated"),
+    paste0(dashboard_cohorts, ": Not yet in K–12")
+  )
+)
+dashboard_cohort_label_lookup <- stats::setNames(
+  dashboard_cohort_labels,
+  as.character(dashboard_cohorts)
+)
+dashboard_cohort_choices <- stats::setNames(
+  as.character(dashboard_cohorts),
+  dashboard_cohort_labels
+)
+dashboard_default_cohorts <- intersect(
+  dashboard_current_graduating_class + 0:4,
+  dashboard_cohorts
+)
 if (length(dashboard_default_cohorts) == 0) {
   dashboard_default_cohorts <- tail(dashboard_cohorts, 5)
 }
