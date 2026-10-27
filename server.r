@@ -654,7 +654,10 @@ server <- function(input, output, session) {
       annotate("text", x = 2020.5, y = 4, label = "No source records\nspring 2020–2021", size = 2.5, color = "#555555") +
       geom_line(linewidth = 0.75, na.rm = TRUE) +
       geom_point(size = 1.8, na.rm = TRUE) +
-      facet_wrap(vars(grade_level), ncol = facet_columns) +
+      # Give every facet its own Plotly axis pair. ggplotly can otherwise
+      # combine axes across rows (for example x2 with y), leaving panels blank
+      # when a grade selection changes the layout from one row to two.
+      facet_wrap(vars(grade_level), ncol = facet_columns, scales = "free") +
       scale_color_manual(values = label_colors, drop = FALSE) +
       scale_linetype_manual(values = line_types, drop = FALSE) +
       scale_shape_manual(values = label_shapes, drop = FALSE) +
@@ -948,7 +951,7 @@ server <- function(input, output, session) {
       annotate("rect", xmin = 2019.5, xmax = 2021.5, ymin = -Inf, ymax = Inf, fill = "#777777", alpha = 0.12) +
       geom_line(linewidth = 0.7, na.rm = TRUE) +
       geom_point(size = 1.5, na.rm = TRUE) +
-      facet_wrap(vars(grade_level), ncol = 2) +
+      facet_wrap(vars(grade_level), ncol = 2, scales = "free") +
       scale_color_manual(values = label_colors) +
       scale_x_continuous(breaks = seq(min(dashboard_spring_years), max(dashboard_spring_years), by = 1)) +
       scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = seq(0, 100, 20)) +

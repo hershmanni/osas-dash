@@ -49,6 +49,74 @@ test_that("trend state updates automatically after selector changes", {
   })
 })
 
+test_that("adding All Grades preserves populated multi-row trend facets", {
+  selected_grades <- c("Grade 6", "Grade 7", "Grade 8", "All Grades")
+
+  shiny::testServer(server, {
+    session$setInputs(
+      student_group = dashboard_default_group,
+      subject = "English Language Arts",
+      organizations = c("state:oregon", "district:2243", "district:2180"),
+      trend_metric = "percent_proficient",
+      trend_grades = selected_grades,
+      trend_labels = FALSE
+    )
+    session$elapse(300)
+    session$flushReact()
+
+    observed <- trend_data() |>
+      filter(!is.na(observation_id), !is.na(value))
+    expect_setequal(unique(observed$grade_level), selected_grades)
+
+    plot <- jsonlite::fromJSON(as.character(output$trend_plot), simplifyVector = FALSE)
+    result_traces <- Filter(
+      function(trace) identical(trace$mode %||% "", "lines+markers") &&
+        nzchar(trace$name %||% ""),
+      plot$x$data
+    )
+    axis_pairs <- vapply(
+      result_traces,
+      function(trace) paste(trace$xaxis %||% "x", trace$yaxis %||% "y", sep = ":"),
+      character(1)
+    )
+    paired_axes <- vapply(
+      result_traces,
+      function(trace) {
+        identical(
+          sub("^x", "", trace$xaxis %||% "x"),
+          sub("^y", "", trace$yaxis %||% "y")
+        )
+      },
+      logical(1)
+    )
+
+    expect_true(all(paired_axes))
+    expect_length(unique(axis_pairs), length(selected_grades))
+
+    participation_plot <- jsonlite::fromJSON(
+      as.character(output$participation_plot),
+      simplifyVector = FALSE
+    )
+    participation_traces <- Filter(
+      function(trace) identical(trace$mode %||% "", "lines+markers") &&
+        nzchar(trace$name %||% ""),
+      participation_plot$x$data
+    )
+    participation_axes_are_paired <- vapply(
+      participation_traces,
+      function(trace) {
+        identical(
+          sub("^x", "", trace$xaxis %||% "x"),
+          sub("^y", "", trace$yaxis %||% "y")
+        )
+      },
+      logical(1)
+    )
+
+    expect_true(all(participation_axes_are_paired))
+  })
+})
+
 test_that("default trend plot is compact and vertically resizable", {
   shiny::testServer(server, {
     session$setInputs(trend_grades = dashboard_default_grades)
